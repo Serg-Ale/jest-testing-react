@@ -1,22 +1,42 @@
-export const formatPrice = (price: number) => {
-	return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, '');
+import type { testProduct } from './types';
+
+
+
+function isNumber(val: unknown): val is number {
+	return typeof val === 'number' && !isNaN(val);
+}
+
+export const formatPrice = (price: unknown): string => {
+	const safePrice = isNumber(price) ? price : 0;
+	return safePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, '');
 };
 
-export const calculateTotalPrice = (
-	products: { id: number; price: number; quantity: number }[]
-) => {
-	return products.reduce((acc, product) => acc + product.price * product.quantity, 0);
+export const calculateTotalPrice = (products: testProduct[] | unknown): number => {
+	if (!Array.isArray(products)) {
+		return 0;
+	}
+	return products.reduce((acc, curr) => {
+		if (!curr || !isNumber((curr as testProduct).price)) {
+			return acc;
+		}
+		return acc + (curr as testProduct).price;
+	}, 0);
 };
 
 export const calculateTotalPriceWithDiscount = (
-	products: { id: number; price: number; quantity: number }[],
-	discount: number
-) => {
-	if (discount >= 100) {
+	products: testProduct[] | unknown,
+	discount: number | unknown
+): number => {
+	if (!Array.isArray(products)) {
 		return 0;
 	}
-	if (discount < 0 || typeof discount !== 'number') {
-		return calculateTotalPrice(products);
-	}
-	return products.reduce((acc, product) => acc + product.price, 0) * (1 - discount / 100);
+	const safeDiscount = isNumber(discount)
+		? discount < 0
+			? 0
+			: discount > 100
+			? 100
+			: discount
+		: 0;
+	const total = calculateTotalPrice(products);
+	return total * (1 - safeDiscount / 100);
 };
