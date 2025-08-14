@@ -19,16 +19,17 @@ export const CartContext = createContext<{
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 	const [items, setItems] = useState<(Product & { quantity: number })[]>([]);
 
+	// Usar forma funcional para evitar condições de corrida e capturas de closure obsoletas
 	const changeQuantity = (item: Product & { quantity: number }) => {
-		setItems(items.map((i) => (i.id === item.id ? item : i)));
+		setItems(prev => prev.map(i => (i.id === item.id ? item : i)));
 	};
 
 	const addItem = (item: Product & { quantity: number }) => {
-		setItems([...items, item]);
+		setItems(prev => [...prev, item]);
 	};
 
 	const removeItem = (item: Product) => {
-		setItems(items.filter((i) => i.id !== item.id));
+		setItems(prev => prev.filter(i => i.id !== item.id));
 	};
 
 	const clear = () => {
