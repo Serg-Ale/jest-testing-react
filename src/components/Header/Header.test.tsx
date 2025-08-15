@@ -18,16 +18,31 @@ const renderHeader = () => {
 };
 
 describe('Header', () => {
-  test('renders Header component', () => {
+  let user: ReturnType<typeof userEvent.setup>;
+
+  beforeEach(() => {
+    user = userEvent.setup();
     renderHeader();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('should render the Header component', () => {
     expect(screen.getByTestId('header')).toBeInTheDocument();
   });
-  test('should navigate to home on logo click', async () => {
-    renderHeader();
-    const user = userEvent.setup();
+
+  test('should navigate to home page when clicking the logo', async () => {
     const logo = screen.getByAltText('logo');
     await user.click(logo);
     expect(mockNavigate).toHaveBeenCalledWith('/');
     expect(mockNavigate).not.toHaveBeenCalledWith('/cart');
+  });
+
+  test('should navigate to cart page when clicking the cart icon', async () => {
+    const cartIcon = screen.getByAltText('cart');
+    await user.click(cartIcon);
+    expect(mockNavigate).toHaveBeenCalledWith('/cart');
   });
 });
