@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import React, { useContext } from 'react';
 import { CartContext, CartProvider } from './index';
 import type { Product } from '../../types';
@@ -66,29 +66,38 @@ const renderCart = (): CartHarness => {
   };
 };
 
+
 describe('CartContext', () => {
-  test('starts empty', () => {
-    renderCart();
-    expect(screen.getByTestId('items-json').textContent).toBe('[]');
+  let cart: ReturnType<typeof renderCart>;
+
+  beforeEach(() => {
+    // Fresh harness each test ensures isolation of state
+    cart = renderCart();
   });
 
-  test('addItem adds a new item', () => {
-    const cart = renderCart();
+  afterEach(() => {
+    // No jest mocks here yet; kept for consistency / future additions
+    jest.clearAllMocks();
+  });
+
+  test('should start with empty items array', () => {
+    expect(cart.items()).toHaveLength(0);
+  });
+
+  test('should add a new item with specified quantity', () => {
     const p = makeProduct({ id: 1 });
     cart.add(p, 2);
     expect(cart.items()).toHaveLength(1);
     expect(cart.items()[0]).toMatchObject({ id: 1, quantity: 2 });
   });
 
-  test('addItem can add two distinct items', () => {
-    const cart = renderCart();
+  test('should add two distinct items preserving order', () => {
     cart.add(makeProduct({ id: 1 }), 1);
     cart.add(makeProduct({ id: 2 }), 3);
     expect(cart.items().map(i => i.id)).toEqual([1, 2]);
   });
 
-  test('removeItem removes by id', () => {
-    const cart = renderCart();
+  test('should remove an item by id', () => {
     const p1 = makeProduct({ id: 1 });
     const p2 = makeProduct({ id: 2 });
     cart.add(p1, 1);
@@ -98,8 +107,7 @@ describe('CartContext', () => {
     expect(cart.items()[0].id).toBe(2);
   });
 
-  test('changeQuantity updates only matching item', () => {
-    const cart = renderCart();
+  test('should update quantity only for matching item id', () => {
     const p1 = makeProduct({ id: 1 });
     const p2 = makeProduct({ id: 2 });
     cart.add(p1, 1);
@@ -109,16 +117,14 @@ describe('CartContext', () => {
     expect(cart.items().find(i => i.id === 2)!.quantity).toBe(7);
   });
 
-  test('clear empties items', () => {
-    const cart = renderCart();
+  test('should clear all items', () => {
     cart.add(makeProduct({ id: 1 }), 2);
     cart.add(makeProduct({ id: 2 }), 3);
     cart.clear();
     expect(cart.items()).toHaveLength(0);
   });
 
-  test('changeQuantity with unknown id keeps state', () => {
-    const cart = renderCart();
+  test('should keep state when changing quantity for unknown id', () => {
     const p1 = makeProduct({ id: 1 });
     cart.add(p1, 1);
     const firstRef = cart.items()[0];
@@ -128,8 +134,7 @@ describe('CartContext', () => {
     expect(cart.items()[0].quantity).toBe(1);
   });
 
-  test('document current behavior: duplicate id allowed (adds two entries)', () => {
-    const cart = renderCart();
+  test('documents current behavior: duplicate ids create separate entries', () => {
     const base = makeProduct({ id: 123 });
     cart.add(base, 1);
     cart.add(base, 4);
