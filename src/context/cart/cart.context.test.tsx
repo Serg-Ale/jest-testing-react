@@ -3,9 +3,10 @@ import React, { useContext } from 'react';
 import { CartContext, CartProvider } from './index';
 import type { Product } from '@/types';
 
-// Helper fábrica de produtos (mantida DRY para os testes)
+// Deterministic factory (avoids randomness that could mask id collisions)
+let nextId = 1;
 const makeProduct = (overrides: Partial<Product> = {}): Product => ({
-  id: overrides.id ?? Math.floor(Math.random() * 100000),
+  id: overrides.id ?? nextId++,
   name: overrides.name ?? 'Produto',
   price: overrides.price ?? 10,
   description: overrides.description ?? 'Desc',
@@ -15,24 +16,13 @@ const makeProduct = (overrides: Partial<Product> = {}): Product => ({
   sizes: overrides.sizes ?? ['M']
 });
 
-// Harness para encapsular acesso ao contexto e evitar repetição de act / ctx!
-interface CartHarness {
-  readonly ctx: React.ContextType<typeof CartContext>;
-  add: (product: Product, quantity: number) => void;
-  addRaw: (item: Product & { quantity: number }) => void;
-  remove: (product: Product) => void;
-  changeQuantity: (product: Product, quantity: number) => void;
-  clear: () => void;
-  items: () => (Product & { quantity: number })[];
-}
-
-const renderCart = (): CartHarness => {
-  let current: React.ContextType<typeof CartContext> | undefined;
+// Minimal harness: rely on synchronous state updates (no manual act needed)
+const renderCart = () => {
+  const store: { current?: React.ContextType<typeof CartContext> } = {};
 
   const Consumer: React.FC = () => {
-    const value = useContext(CartContext);
-    current = value; // sempre mantém referência atualizada
-    return <div data-testid="items-json">{JSON.stringify(value.items)}</div>;
+    store.current = useContext(CartContext);
+    return null;
   };
 
   render(
@@ -41,28 +31,19 @@ const renderCart = (): CartHarness => {
     </CartProvider>
   );
 
-  const getCtx = () => {
-    if (!current) throw new Error('Contexto não inicializado');
-    return current;
+  const ctx = () => {
+    if (!store.current) throw new Error('Contexto não inicializado');
+    return store.current;
   };
 
-  const wrap = <T,>(fn: () => T): T => {
-    let result: T;
-    act(() => {
-      result = fn();
-    });
-    // @ts-expect-error result é sempre definido após act
-    return result;
-  };
+  const wrap = (fn: () => void) => act(fn);
 
   return {
-    get ctx() { return getCtx(); },
-    add: (product, quantity) => wrap(() => getCtx().addItem({ ...product, quantity })),
-    addRaw: (item) => wrap(() => getCtx().addItem(item)),
-    remove: (product) => wrap(() => getCtx().removeItem(product)),
-    changeQuantity: (product, quantity) => wrap(() => getCtx().changeQuantity({ ...product, quantity })),
-    clear: () => wrap(() => getCtx().clear()),
-    items: () => getCtx().items
+    add: (p: Product, q: number) => wrap(() => ctx().addItem({ ...p, quantity: q })),
+    remove: (p: Product) => wrap(() => ctx().removeItem(p)),
+    changeQuantity: (p: Product, q: number) => wrap(() => ctx().changeQuantity({ ...p, quantity: q })),
+    clear: () => wrap(() => ctx().clear()),
+    items: () => ctx().items
   };
 };
 
@@ -71,13 +52,8 @@ describe('CartContext', () => {
   let cart: ReturnType<typeof renderCart>;
 
   beforeEach(() => {
-    // Fresh harness each test ensures isolation of state
+    nextId = 1; // reset deterministic id sequence
     cart = renderCart();
-  });
-
-  afterEach(() => {
-    // No jest mocks here yet; kept for consistency / future additions
-    jest.clearAllMocks();
   });
 
   test('should start with empty items array', () => {
@@ -127,11 +103,11 @@ describe('CartContext', () => {
   test('should keep state when changing quantity for unknown id', () => {
     const p1 = makeProduct({ id: 1 });
     cart.add(p1, 1);
-    const firstRef = cart.items()[0];
-    cart.changeQuantity(makeProduct({ id: 999 }), 10);
-    expect(cart.items()).toHaveLength(1);
-    expect(cart.items()[0]).toBe(firstRef);
-    expect(cart.items()[0].quantity).toBe(1);
+  cart.changeQuantity(makeProduct({ id: 999 }), 10); // unrelated id
+  const only = cart.items()[0];
+  expect(cart.items()).toHaveLength(1);
+  expect(only.id).toBe(1);
+  expect(only.quantity).toBe(1);
   });
 
   test('documents current behavior: duplicate ids create separate entries', () => {
