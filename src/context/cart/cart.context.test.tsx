@@ -1,7 +1,7 @@
 import { render, act } from '@testing-library/react';
 import React, { useContext } from 'react';
 import { CartContext, CartProvider } from './index';
-import type { Product } from '../../types';
+import type { Product } from '@/types';
 
 // Helper fábrica de produtos (mantida DRY para os testes)
 const makeProduct = (overrides: Partial<Product> = {}): Product => ({

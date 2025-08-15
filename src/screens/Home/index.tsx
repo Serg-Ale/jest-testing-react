@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router';
-import ProductCard from '../../components/ProductCard/ProductCard';
-import { useCategories, useProducts } from '../../context';
-import SearchInput from '../../components/SearchInput/SearchInput';
 import { useState } from 'react';
+import ProductCard from '@/components/ProductCard/ProductCard';
+import SearchInput from '@/components/SearchInput/SearchInput';
+import { useCategories, useProducts } from '@/context';
 
 const Home = () => {
 	const navigate = useNavigate();

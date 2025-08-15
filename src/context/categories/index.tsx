@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useEffect, useState } from 'react';
-import type { Category } from '../../types';
+import type { Category } from '@/types';
 
 export const CategoriesContext = createContext<{
 	categories: Category[];

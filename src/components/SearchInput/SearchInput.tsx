@@ -1,5 +1,5 @@
 import { useState, type InputHTMLAttributes } from 'react';
-import SearchIcon from '../../assets/search.svg';
+import SearchIcon from '@/assets/search.svg';
 
 interface SearchInputProps extends InputHTMLAttributes<HTMLInputElement> {
 	placeholder: string;

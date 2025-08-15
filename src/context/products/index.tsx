@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useEffect, useState } from 'react';
-import type { Product } from '../../types';
+import type { Product } from '@/types';
 
 export const ProductsContext = createContext<{
 	products: Product[];

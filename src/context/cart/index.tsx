@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState } from 'react';
-import type { Product } from '../../types';
+import type { Product } from '@/types';
 
 export const CartContext = createContext<{
 	items: (Product & { quantity: number })[];

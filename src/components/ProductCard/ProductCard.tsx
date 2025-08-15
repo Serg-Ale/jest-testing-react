@@ -1,5 +1,5 @@
-import type { Product } from '../../types';
-import { formatPrice } from '../../utils';
+import type { Product } from '@/types';
+import { formatPrice } from '@/utils';
 
 interface ProductCardProps {
 	product: Product;

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import Button from '../../components/Button/Button';
-import { useCart, useProducts } from '../../context';
-import { formatPrice } from '../../utils';
 import { useNavigate, useParams } from 'react-router';
-import RadioButton from '../../components/RadioButton/RadioButton';
-import Selector from '../../components/Selector/Selector';
-import type { Product } from '../../types';
+import Button from '@/components/Button/Button';
+import RadioButton from '@/components/RadioButton/RadioButton';
+import Selector from '@/components/Selector/Selector';
+import { useCart, useProducts } from '@/context';
+import { formatPrice } from '@/utils';
+import type { Product } from '@/types';
 
 export default function Product() {
 	const navigate = useNavigate();

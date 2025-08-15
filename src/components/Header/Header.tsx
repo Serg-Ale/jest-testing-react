@@ -1,5 +1,5 @@
-import Logo from '../../assets/primary.png';
-import Cart from '../../assets/cart.svg';
+import Logo from '@/assets/primary.png';
+import Cart from '@/assets/cart.svg';
 import { useNavigate } from 'react-router';
 
 const Header = () => {

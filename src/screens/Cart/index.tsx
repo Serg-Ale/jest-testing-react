@@ -1,7 +1,7 @@
-import Counter from '../../components/Counter/Counter';
-import { useCart } from '../../context';
-import TrashIcon from '../../assets/trash.svg';
-import { calculateTotalPrice, formatPrice } from '../../utils';
+import Counter from '@/components/Counter/Counter';
+import { useCart } from '@/context';
+import TrashIcon from '@/assets/trash.svg';
+import { calculateTotalPrice, formatPrice } from '@/utils';
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
 

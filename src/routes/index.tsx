@@ -1,9 +1,9 @@
 import { createBrowserRouter } from 'react-router';
-import Home from '../screens/Home';
 import { Wrapper } from './helpers';
-import NotFound from '../screens/NotFound';
-import Product from '../screens/Product';
-import Cart from '../screens/Cart';
+import Home from '@/screens/Home';
+import NotFound from '@/screens/NotFound';
+import Product from '@/screens/Product';
+import Cart from '@/screens/Cart';
 
 const router = createBrowserRouter([
 	{

@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes } from 'react';
-import CartIcon from '../../assets/add-cart.svg';
+import CartIcon from '@/assets/add-cart.svg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	children: React.ReactNode;
