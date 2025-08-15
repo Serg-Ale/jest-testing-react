@@ -19,27 +19,31 @@ Aplicação modelo utilizada para estudo de testes em aplicações React moderna
 
 | Alvo | Abordagem | Técnicas | Exemplos |
 |------|-----------|----------|----------|
-| Componentes simples | Render + assertions sem mocks complexos | Queries byRole / byTestId | `Footer.test.tsx` |
-| Navegação | Mock de `useNavigate` | `jest.mock('react-router', ...)` | `Header.test.tsx` |
-| Interação do usuário | `userEvent` para cliques e digitação | Setup único em `beforeEach` | `Header.test.tsx` |
-| Context (estado global) | Render com Providers reais | Asserts de mutação de estado | `cart.context.test.tsx` |
-| Funções utilitárias | Testes determinísticos | Valores de entrada/saída | `utils/index.test.ts` |
+| Componentes simples | `renderWithProviders` (ou sem providers) + assertions | Queries por função semântica (`getByRole`, `getByText`) | `Footer.test.tsx` |
+| Navegação | Mock centralizado de `useNavigate` | Mock único em `jest.setup.ts` via `routerMocks.ts` | `Header.test.tsx` |
+| Interação do usuário | `userEvent` já retornado pelo helper | `const { user } = renderWithProviders(...)` | `Header.test.tsx` |
+| Context (estado global) | Providers reais + harness mínimo | Mutação / ordem / isolamento de estado | `cart.context.test.tsx` |
+| Funções utilitárias | Testes determinísticos e abrangendo bordas | Entradas inválidas / limites / formatação | `utils/index.test.ts` |
+| Fetch / API fake | Mock global de `fetch` determinístico | `mockFetch` instalado em `jest.setup.ts` | (futuro: telas com dados) |
 
 ### Boas práticas aplicadas
 
-- `userEvent.setup()` centralizado em `beforeEach` para reduzir repetição
-- `jest.clearAllMocks()` em `afterEach` para evitar vazamento de chamadas entre testes
-- Evitado uso desnecessário de `beforeAll` / `afterAll` (isolamento primeiro)
-- Queries preferindo semântica (ex: `getByAltText('logo')`) quando possível
-- Separação clara: Arrange (render), Act (interação), Assert (expect)
+- Helper `renderWithProviders` reduz repetição (router + context + `userEvent`).
+- Mock de navegação (`mockNavigate`) e de `fetch` centralizados em `jest.setup.ts` para consistência.
+- Uso preferencial de queries semânticas (`getByRole`, `findByRole`, `getByText`).
+- Evitado `beforeAll` / `afterAll` – cada teste isola seu ambiente.
+- Fabricação determinística de dados em testes de contexto (IDs previsíveis, sem `Math.random`).
+- `act` explícito encapsulado no harness do contexto para React 19 (silencia warnings e garante flush de updates).
+- Separação clara: Arrange (render), Act (interação), Assert (expect).
 
 ### Próximos passos de testes (Roadmap)
 
 - [ ] Adicionar testes de acessibilidade (axe / jest-axe)
-- [ ] Cobrir estados de erro e carregamento (quando houver fetch)
-- [ ] Introduzir MSW para simular API
+- [ ] Cobrir estados de erro e carregamento (quando houver fetch real)
+- [ ] Introduzir MSW para simular API (e eventualmente remover mockFetch global)
 - [ ] Medir cobertura (`--coverage`) e definir meta (ex: 80%)
 - [ ] Adicionar testes de seleção de categorias / filtro de produtos
+- [ ] Teste de fluxo completo (adicionar item ao carrinho -> finalizar pedido) 
 
 ## 🧩 Stack Técnica
 
@@ -61,17 +65,18 @@ src/
   screens/           # Páginas (Home, Cart, Product, NotFound)
   utils/             # Funções utilitárias e tipos
   assets/            # Imagens e ícones
-test/__mocks__/      # Mocks auxiliares (ex: fileMock)
+  test-utils/        # Helpers e mocks compartilhados (render, routerMocks, mockFetch, fileMock)
 ```
 
 ## 📜 Convenções de Código & Teste
 
-- Nome de arquivo de teste: `Componente.test.tsx` ou perto do alvo
-- `describe` agrupa domínio funcional do componente / módulo
-- Test names em inglês, no formato: `should <expected behavior> when <condition>`
-- Evitar múltiplos asserts não relacionados em um único teste
-- Não misturar responsabilidades: interação + efeito esperado claro
-- Limpeza de mocks sempre local (`afterEach`) em vez de global (maior isolamento)
+- Nome de arquivo de teste: `Componente.test.tsx` ao lado do alvo.
+- `describe` agrupa domínio funcional do componente / módulo.
+- Test names em inglês (ou português consistente) descrevendo comportamento.
+- Preferir uma expectativa principal por cenário lógico (adicionais ok se relacionados).
+- Não testar detalhes de implementação (focar comportamento / UI / contrato público).
+- Mocks centrais configurados em `jest.setup.ts` (navegação + fetch). Limpeza automática via `afterEach` lá.
+- Em novos testes, obter `user` de `renderWithProviders` em vez de `userEvent.setup()` manual.
 
 ## ⚙️ Scripts
 
@@ -100,30 +105,28 @@ pnpm server
 pnpm test
 ```
 
-## 🔍 Exemplo de Teste (Header)
+## 🔍 Exemplo de Teste (Header) – padrão atual
 
 ```tsx
+import { screen } from '@testing-library/react';
+import Header from '@/components/Header/Header';
+import { renderWithProviders } from '@/test-utils/render';
+import { mockNavigate } from '@/test-utils/routerMocks';
+
 describe('Header', () => {
-  let user: ReturnType<typeof userEvent.setup>;
-
-  beforeEach(() => {
-    user = userEvent.setup();
-    render(<MemoryRouter><Header /></MemoryRouter>);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  test('should navigate to home page when clicking the logo', async () => {
-    await user.click(screen.getByAltText('logo'));
+  test('navega para home ao clicar no logo', async () => {
+    const { user } = renderWithProviders(<Header />, { withProviders: false });
+    await user.click(screen.getByRole('img', { name: /logo/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 });
 ```
 
-### Por que evitar `resetAllMocks` aqui?
-`clearAllMocks` preserva implementações custom de mocks; só limpamos histórico de chamadas. `resetAllMocks` também descarta implementações — desnecessário quando não sobrescrevemos `mockImplementation` entre testes.
+### Por que não usamos mais `userEvent.setup()` manual?
+O helper já cria e retorna `user`, reduzindo repetição e garantindo configuração consistente entre testes.
+
+### Sobre limpeza de mocks
+Histórico de chamadas de `fetch` e `mockNavigate` é limpo automaticamente no `jest.setup.ts`. Só adicione `clearAllMocks` localmente se um teste definir implementações específicas de outros mocks.
 
 ## ✅ Qualidade & Boas Práticas
 
@@ -134,10 +137,11 @@ describe('Header', () => {
 
 ## 📌 Aprendizados até agora
 
-1. Diferença entre limpar chamadas (`clearAllMocks`) e redefinir mocks (`resetAllMocks`)
-2. Setup único de `userEvent` reduz duplicação e facilita manutenção
-3. Mock seletivo de `useNavigate` para testar roteamento sem acoplamento à implementação
-4. Importância de nomes descritivos nos testes para leitura futura
+1. Diferenciar limpar chamadas (`mockClear`) de redefinir implementação (`mockReset`).
+2. Helper de render melhora consistência e reduz boilerplate (router + providers + user).
+3. Mock centralizado de `useNavigate` evita mocks duplicados e divergentes em cada arquivo.
+4. IDs determinísticos em testes de estado previnem flakiness oculta.
+5. Queries semânticas geram testes mais robustos do que `data-testid` na maioria dos casos.
 
 ## 🛣️ Roadmap Futuro
 
@@ -161,4 +165,4 @@ O repositório é principalmente educacional (curso Alura). Sugestões de melhor
 
 ---
 
-Se quiser ver próximos incrementos (ex: cobertura ou MSW) abra uma issue ou continue os experimentos. Bons testes! 🧪
+Se quiser ver próximos incrementos (ex: cobertura, MSW ou acessibilidade) abra uma issue ou continue os experimentos. Bons testes! 🧪
