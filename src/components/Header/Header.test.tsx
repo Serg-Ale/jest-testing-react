@@ -1,48 +1,28 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { screen } from '@testing-library/react';
 import Header from './Header';
-
-const mockNavigate = jest.fn();
-jest.mock('react-router', () => ({
-  ...jest.requireActual('react-router'),
-  useNavigate: () => mockNavigate,
-}));
-
-const renderHeader = () => {
-  render(
-    <MemoryRouter>
-      <Header />
-    </MemoryRouter>
-  );
-};
+import { renderWithProviders } from '@/test-utils/render';
+import { mockNavigate } from '@/test-utils/routerMocks';
 
 describe('Header', () => {
-  let user: ReturnType<typeof userEvent.setup>;
-
-  beforeEach(() => {
-    user = userEvent.setup();
-    renderHeader();
+  test('renders and is visible', () => {
+    renderWithProviders(<Header />, { withProviders: false });
+    // Prefer semantic container role or landmark later; fallback to test id for now.
+    expect(screen.getByTestId('header')).toBeVisible();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  test('should render the Header component', () => {
-    expect(screen.getByTestId('header')).toBeInTheDocument();
-  });
-
-  test('should navigate to home page when clicking the logo', async () => {
-    const logo = screen.getByAltText('logo');
+  test('navigates home when clicking the logo image', async () => {
+    const { user } = renderWithProviders(<Header />, { withProviders: false });
+    const logo = screen.getByRole('img', { name: /logo/i });
     await user.click(logo);
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
     expect(mockNavigate).toHaveBeenCalledWith('/');
-    expect(mockNavigate).not.toHaveBeenCalledWith('/cart');
   });
 
-  test('should navigate to cart page when clicking the cart icon', async () => {
-    const cartIcon = screen.getByAltText('cart');
+  test('navigates to cart when clicking the cart icon', async () => {
+    const { user } = renderWithProviders(<Header />, { withProviders: false });
+    const cartIcon = screen.getByRole('img', { name: /cart/i });
     await user.click(cartIcon);
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
     expect(mockNavigate).toHaveBeenCalledWith('/cart');
   });
 });
