@@ -1,4 +1,3 @@
-import { waitFor } from '@testing-library/react';
 import { renderCart, cartActions, cartAssertions } from '../test-utils/cart.test-utils';
 
 // Mock setup
@@ -9,18 +8,9 @@ jest.mock('react-router', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-describe('Cart Screen', () => {
+describe('Cart Screen - Item Management', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
-  });
-
-  test('should render empty cart message when there are no items in the cart', async () => {
-    await renderCart();
-    
-    cartAssertions.expectEmptyCart();
-
-    await cartActions.continueShopping();
-    expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 
   test('should show the item that was added to the cart', async () => {
@@ -62,22 +52,5 @@ describe('Cart Screen', () => {
     await cartActions.removeItem();
 
     cartAssertions.expectProductNotInCart();
-  });
-
-  test('should finalize the cart when checkout button is clicked', async () => {
-    await renderCart();
-
-    await cartActions.addTestItem();
-    cartAssertions.expectProductInCart();
-
-    await cartActions.clickCheckout();
-    cartAssertions.expectProcessingState();
-
-    await waitFor(
-      () => {
-        cartAssertions.expectOrderSuccess();
-      },
-      { timeout: 1000 }
-    );
   });
 });
