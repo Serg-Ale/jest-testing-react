@@ -21,14 +21,15 @@ export const createMockFetch = (config: MockFetchConfig = {}): jest.Mock => {
     fallback = {}
   } = config;
 
-  const fn = jest.fn(async (input: RequestInfo | URL) => {
+  const fn = jest.fn((input: RequestInfo | URL) => {
     const url = typeof input === 'string' ? input : input.toString();
 
-    const respond = (data: unknown, init: Partial<Response> = {}) => ({
-      ok: true,
-      status: init.status ?? 200,
-      json: async () => data
-    });
+    const respond = (data: unknown, init: Partial<Response> = {}) => 
+      Promise.resolve({
+        ok: true,
+        status: init.status ?? 200,
+        json: () => Promise.resolve(data)
+      });
 
     if (url.endsWith('/categories') || url === '/categories') {
       return respond(categories);

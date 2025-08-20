@@ -25,6 +25,16 @@ jest.mock('react-router', () => {
 import { installGlobalFetchMock, resetMockFetch } from './src/test-utils/mockFetch';
 installGlobalFetchMock();
 
+// Speed up setTimeout for testing (reduce 2000ms to 100ms)
+const originalSetTimeout = global.setTimeout;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+global.setTimeout = ((callback: (...args: any[]) => void, delay?: number, ...args: any[]) => {
+  // If delay is 2000ms (checkout delay), reduce it to 100ms for tests
+  const testDelay = delay === 2000 ? 100 : delay;
+  return originalSetTimeout(callback, testDelay, ...args);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+}) as any;
+
 // Optionally clear fetch mock call history after each test
 afterEach(() => {
 	resetMockFetch();
