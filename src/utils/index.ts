@@ -11,20 +11,21 @@ export const formatPrice = (price: unknown): string => {
 	return safePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, '');
 };
 
-export const calculateTotalPrice = (products: testProduct[] | unknown): number => {
+export const calculateTotalPrice = (products: (testProduct & { quantity: number })[] | unknown): number => {
 	if (!Array.isArray(products)) {
 		return 0;
 	}
 	return products.reduce((acc, curr) => {
-		if (!curr || !isNumber((curr as testProduct).price)) {
+		if (!curr || !isNumber((curr as testProduct & { quantity: number }).price) || !isNumber((curr as testProduct & { quantity: number }).quantity)) {
 			return acc;
 		}
-		return acc + (curr as testProduct).price;
+		const item = curr as testProduct & { quantity: number };
+		return acc + (item.price * item.quantity);
 	}, 0);
 };
 
 export const calculateTotalPriceWithDiscount = (
-	products: testProduct[] | unknown,
+	products: (testProduct & { quantity: number })[] | unknown,
 	discount: number | unknown
 ): number => {
 	if (!Array.isArray(products)) {
