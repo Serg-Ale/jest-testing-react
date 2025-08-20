@@ -1,0 +1,7 @@
+# Run all tests before pushing
+echo "🧪 Running tests before push..."
+pnpm test
+
+# Run type checking
+echo "🔍 Running type check..."
+pnpm build
